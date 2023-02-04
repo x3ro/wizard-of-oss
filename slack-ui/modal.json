@@ -1,0 +1,112 @@
+{
+  "title": {
+    "type": "plain_text",
+    "text": "Open Source Contribution",
+    "emoji": true
+  },
+  "submit": {
+    "type": "plain_text",
+    "text": "Submit",
+    "emoji": true
+  },
+  "type": "modal",
+  "close": {
+    "type": "plain_text",
+    "text": "Cancel",
+    "emoji": true
+  },
+  "blocks": [
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*You're about to submit an open source contribution. Here's some stuff to keep in mind:* TODO."
+      }
+    },
+    {
+      "type": "input",
+      "block_id": "description",
+      "element": {
+        "type": "plain_text_input",
+        "multiline": true,
+        "action_id": "description"
+      },
+      "label": {
+        "type": "plain_text",
+        "text": "Describe what you worked on",
+        "emoji": true
+      }
+    },
+    {
+      "type": "input",
+      "block_id": "number_of_hours",
+      "element": {
+        "type": "number_input",
+        "is_decimal_allowed": true,
+        "action_id": "number_of_hours"
+      },
+      "label": {
+        "type": "plain_text",
+        "text": "How many hours did you work?",
+        "emoji": true
+      }
+    },
+    {
+      "type": "input",
+      "block_id": "url",
+      "element": {
+        "type": "url_text_input",
+        "action_id": "url"
+      },
+      "label": {
+        "type": "plain_text",
+        "text": "Where can the result be accessed?",
+        "emoji": true
+      }
+    },
+    {
+      "type": "input",
+      "block_id": "country",
+      "element": {
+        "type": "static_select",
+        "placeholder": {
+          "type": "plain_text",
+          "text": "Please select",
+          "emoji": true
+        },
+        "options": [
+          {
+            "text": {
+              "type": "plain_text",
+              "text": "Finland",
+              "emoji": true
+            },
+            "value": "finland"
+          },
+          {
+            "text": {
+              "type": "plain_text",
+              "text": "Germany",
+              "emoji": true
+            },
+            "value": "germany"
+          },
+          {
+            "text": {
+              "type": "plain_text",
+              "text": "Spain",
+              "emoji": true
+            },
+            "value": "spain"
+          }
+        ],
+        "action_id": "country"
+      },
+      "label": {
+        "type": "plain_text",
+        "text": "Which country do you work in?",
+        "emoji": true
+      }
+    }
+  ]
+}

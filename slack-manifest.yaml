@@ -1,0 +1,42 @@
+display_information:
+  name: Wizard of OSS
+features:
+  bot_user:
+    display_name: Wizard of OSS
+    always_online: true
+  shortcuts:
+    - name: Record OSS hours
+      type: global
+      callback_id: record_oss_hours
+      description: Here you can record open source hours
+  slash_commands:
+    - command: /woss
+      url: https://CHANGE-ME.eu.ngrok.io/command
+      description: TODO
+      usage_hint: /woss [stats]
+      should_escape: false
+  workflow_steps:
+    - name: Record OSS hours
+      callback_id: record_oss_hours
+oauth_config:
+  redirect_urls:
+    - https://CHANGE-ME.eu.ngrok.io/auth/callback
+  scopes:
+    bot:
+      - commands
+      - chat:write
+      - chat:write.customize
+      - users:read
+      - channels:history
+      - workflow.steps:execute
+settings:
+  event_subscriptions:
+    request_url: https://CHANGE-ME.eu.ngrok.io/push
+    bot_events:
+      - workflow_step_execute
+  interactivity:
+    is_enabled: true
+    request_url: https://CHANGE-ME.eu.ngrok.io/interactivity
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false
