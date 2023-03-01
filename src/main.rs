@@ -18,7 +18,6 @@ use crate::errors::AppError;
 use crate::models::OpenSourceAttachment;
 
 const RAW_LOADING_MESSAGES: &str = include_str!("../loading-messages.txt");
-
 lazy_static! {
     static ref LOADING_MESSAGES: Vec<&'static str> = RAW_LOADING_MESSAGES.split('\n').collect();
 }
@@ -31,6 +30,69 @@ async fn open_oss_modal(state: &AppState, trigger_id: SlackTriggerId) {
     };
 
     state.get_session().views_open(&req).await.unwrap();
+}
+
+async fn report_user_stats(state: &AppState, config: &AppConfig, event: &SlackCommandEvent) {
+    let req = SlackApiConversationsHistoryRequest {
+        channel: Some(SlackChannelId(config.slack_oss_channel_id.clone())),
+        cursor: None,
+        latest: None,
+        // TODO: Do we need to implement pagination here?
+        //       Take a look at how the current application handles it.
+        limit: Some(100),
+        oldest: None,
+        inclusive: None,
+    };
+
+    let res = state
+        .get_session()
+        .conversations_history(&req)
+        .await
+        .unwrap();
+
+    let mut hours: HashMap<String, i16> = HashMap::new();
+
+    for x in &res.messages {
+        let Some(attachments) = &x.content.attachments else {
+            continue;
+        };
+
+        let entries: Vec<anyhow::Result<OpenSourceAttachment>> = attachments
+            .iter()
+            .map(|x| x.fields.clone())
+            .map(|x| {
+                if let Some(fields) = x {
+                    fields.try_into()
+                } else {
+                    Err(format_err!("No attachments"))
+                }
+            })
+            .collect();
+
+        for entry in entries {
+            let Ok(entry) = entry else {
+                continue;
+            };
+
+            let current = hours.get(&entry.username).unwrap_or(&0);
+            hours.insert(entry.username.to_string(), current + entry.number_of_hours);
+        }
+    }
+
+    let req = SlackApiChatPostEphemeralRequest {
+        channel: SlackChannelId(config.slack_oss_channel_id.clone()),
+        user: event.user_id.clone(),
+        content: SlackMessageContent::new().with_text(format!("{:#?}", hours)),
+        as_user: None,
+        icon_emoji: None,
+        icon_url: None,
+        link_names: None,
+        parse: None,
+        thread_ts: None,
+        username: None,
+    };
+
+    state.get_session().chat_post_ephemeral(&req).await.unwrap();
 }
 
 // --------
@@ -93,66 +155,7 @@ async fn command_event_handler(
     match event.text.as_deref() {
         Some("stats") => {
             tokio::spawn(async move {
-                let req = SlackApiConversationsHistoryRequest {
-                    channel: Some(SlackChannelId(config.slack_oss_channel_id.clone())),
-                    cursor: None,
-                    latest: None,
-                    // TODO: Do we need to implement pagination here?
-                    //       Take a look at how the current application handles it.
-                    limit: Some(100),
-                    oldest: None,
-                    inclusive: None,
-                };
-
-                let res = state
-                    .get_session()
-                    .conversations_history(&req)
-                    .await
-                    .unwrap();
-
-                let mut hours: HashMap<String, i16> = HashMap::new();
-
-                for x in &res.messages {
-                    let Some(attachments) = &x.content.attachments else {
-                        continue;
-                    };
-
-                    let entries: Vec<anyhow::Result<OpenSourceAttachment>> = attachments
-                        .iter()
-                        .map(|x| x.fields.clone())
-                        .map(|x| {
-                            if let Some(fields) = x {
-                                fields.try_into()
-                            } else {
-                                Err(format_err!("No attachments"))
-                            }
-                        })
-                        .collect();
-
-                    for entry in entries {
-                        let Ok(entry) = entry else {
-                            continue;
-                        };
-
-                        let current = hours.get(&entry.username).unwrap_or(&0);
-                        hours.insert(entry.username.to_string(), current + entry.number_of_hours);
-                    }
-                }
-
-                let req = SlackApiChatPostEphemeralRequest {
-                    channel: SlackChannelId(config.slack_oss_channel_id.clone()),
-                    user: event.user_id,
-                    content: SlackMessageContent::new().with_text(format!("{:#?}", hours)),
-                    as_user: None,
-                    icon_emoji: None,
-                    icon_url: None,
-                    link_names: None,
-                    parse: None,
-                    thread_ts: None,
-                    username: None,
-                };
-
-                state.get_session().chat_post_ephemeral(&req).await.unwrap();
+                report_user_stats(&state, &config, &event).await
             });
 
             Ok(Json(loading_message()))
