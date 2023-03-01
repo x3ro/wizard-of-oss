@@ -4,11 +4,12 @@ use axum::Extension;
 use slack_morphism::prelude::*;
 use tracing::*;
 
-use crate::{
+use crate::request_handlers::{
     command_event_handler, error_handler, install_cancel_handler, install_error_handler,
     install_success_handler, interaction_event_handler, push_event_handler,
-    test_oauth_install_function, AppConfig, AppState,
+    test_oauth_install_function,
 };
+use crate::{AppConfig, AppState};
 
 pub async fn start(config: AppConfig) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let config_extension = Extension(config.clone());
@@ -23,7 +24,7 @@ pub async fn start(config: AppConfig) -> Result<(), Box<dyn std::error::Error + 
         api_token,
     };
 
-    let addr = std::net::SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = std::net::SocketAddr::from(([0, 0, 0, 0], config.port));
     info!("Starting server: {}", addr);
 
     let oauth_listener_config = SlackOAuthListenerConfig::new(
