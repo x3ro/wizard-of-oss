@@ -1,6 +1,7 @@
 use axum::response::IntoResponse;
 use axum::Json;
 use http::StatusCode;
+use redis::RedisError;
 use serde_json::json;
 use tracing::{debug, error};
 
@@ -12,6 +13,12 @@ pub enum AppError {
 impl From<anyhow::Error> for AppError {
     fn from(inner: anyhow::Error) -> Self {
         AppError::InternalServerError(inner)
+    }
+}
+
+impl From<RedisError> for AppError {
+    fn from(inner: RedisError) -> Self {
+        AppError::InternalServerError(inner.into())
     }
 }
 

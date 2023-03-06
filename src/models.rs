@@ -2,7 +2,7 @@ use anyhow::{format_err, Context};
 use slack_morphism::SlackMessageAttachmentFieldObject;
 use url::Url;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OpenSourceAttachment {
     pub username: String,
     pub number_of_hours: i16,

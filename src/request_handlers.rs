@@ -11,8 +11,8 @@ use url::Url;
 
 use crate::errors::AppError;
 use crate::models::OpenSourceAttachment;
-use crate::{slack, AppConfig, AppState};
 use crate::slack::SlackViewStateExt;
+use crate::{slack, AppConfig, AppState};
 
 const RAW_LOADING_MESSAGES: &str = include_str!("../loading-messages.txt");
 lazy_static! {
@@ -87,7 +87,10 @@ pub async fn command_event_handler(
             // TODO: Pre-fill form with parameters, and if all parameters are available,
             //       don't show form at all.
             tokio::spawn(async move {
-                slack::open_oss_modal(&state, event.trigger_id).await;
+                let default_country = state.persistence.get_default_country(event.user_id).await;
+                slack::open_oss_modal(&state, event.trigger_id, default_country)
+                    .await
+                    .unwrap();
             });
 
             Ok(Json(loading_message()))
@@ -124,7 +127,10 @@ pub async fn interaction_event_handler(
     match event {
         SlackInteractionEvent::Shortcut(s) => match s.callback_id.as_ref() {
             "record_oss_hours" => {
-                slack::open_oss_modal(&state, s.trigger_id).await;
+                let default_country = state.persistence.get_default_country(s.user.id).await;
+                slack::open_oss_modal(&state, s.trigger_id, default_country)
+                    .await
+                    .unwrap();
                 Ok("".to_string())
             }
 
@@ -139,7 +145,7 @@ pub async fn interaction_event_handler(
             let number_of_hours = view_state.input_value("number_of_hours")?;
             let url = view_state.input_value("url")?;
             let description = view_state.input_value("description")?;
-            let country = view_state.select_value( "country")?;
+            let country = view_state.select_value("country")?;
 
             info!("Received a new submission: {number_of_hours} {url} '{description}' {country}");
 
@@ -201,7 +207,7 @@ pub async fn interaction_event_handler(
                         color: Some("good".to_string()),
                         fallback: None,
                         title: None,
-                        fields: Some(attachment.into()),
+                        fields: Some(attachment.clone().into()),
                         mrkdwn_in: None,
                     },
                 ]),
@@ -218,6 +224,10 @@ pub async fn interaction_event_handler(
             };
 
             state.get_session().chat_post_message(&req).await.unwrap();
+            state
+                .persistence
+                .set_default_country(res.user.id, attachment.country)
+                .await?;
 
             Ok("".to_string())
         }

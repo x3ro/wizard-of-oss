@@ -28,7 +28,14 @@ function cmd_fmt {
 }
 
 function cmd_usage {
-    echo "Currently only ./go check is supported";
+  cat <<-eof
+Usage: ./go [cmd]
+
+where [cmd] is one eof
+
+    check   Run all things you would want to check before pushing
+    fmt     Run auto-formatting
+eof
 }
 
 ensure_env

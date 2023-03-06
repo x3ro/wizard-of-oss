@@ -4,6 +4,7 @@ use axum::Extension;
 use slack_morphism::prelude::*;
 use tracing::*;
 
+use crate::persistence::Persistence;
 use crate::request_handlers::{
     command_event_handler, error_handler, install_cancel_handler, install_error_handler,
     install_success_handler, interaction_event_handler, push_event_handler,
@@ -13,7 +14,7 @@ use crate::{AppConfig, AppState};
 
 pub async fn start(config: AppConfig) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let config_extension = Extension(config.clone());
-    let token_value: SlackApiTokenValue = config.slack_test_token.into();
+    let token_value: SlackApiTokenValue = config.slack_test_token.clone().into();
     let api_token: SlackApiToken = SlackApiToken::new(token_value);
 
     let client: Arc<SlackHyperClient> =
@@ -22,6 +23,7 @@ pub async fn start(config: AppConfig) -> Result<(), Box<dyn std::error::Error + 
     let app_state = AppState {
         client: client.clone(),
         api_token,
+        persistence: Persistence::new(&config).await?,
     };
 
     let addr = std::net::SocketAddr::from(([0, 0, 0, 0], config.port));
