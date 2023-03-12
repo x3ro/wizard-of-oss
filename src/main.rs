@@ -1,5 +1,8 @@
+extern crate core;
+
 mod errors;
 mod models;
+mod persistence;
 mod request_handlers;
 mod server;
 mod slack;
@@ -19,6 +22,7 @@ lazy_static! {
 pub struct AppState {
     client: Arc<SlackHyperClient>,
     api_token: SlackApiToken,
+    pub persistence: persistence::Persistence,
 }
 
 impl AppState {
@@ -31,6 +35,7 @@ impl AppState {
 #[derive(Clone, Debug)]
 pub struct AppConfig {
     port: u16,
+    redis_url: String,
     slack_client_id: String,
     slack_client_secret: String,
     slack_bot_scope: String,
@@ -44,6 +49,7 @@ impl AppConfig {
     fn from_env() -> Result<Self, anyhow::Error> {
         Ok(AppConfig {
             port: Self::env_var("PORT")?.parse()?,
+            redis_url: Self::env_var("REDISCLOUD_URL")?,
             slack_client_id: Self::env_var("SLACK_CLIENT_ID")?,
             slack_client_secret: Self::env_var("SLACK_CLIENT_SECRET")?,
             slack_bot_scope: Self::env_var("SLACK_BOT_SCOPE")?,
